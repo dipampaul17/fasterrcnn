@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import numpy as np
-from cv2 import cv2
+import cv2
 import random
 import copy
 from . import data_augment
@@ -389,7 +389,7 @@ def get_anchor_gt(all_img_data, class_count, C, img_length_calc_function, backen
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
 
-				if backend == 'tf':
+				if backend == 'channels_last':
 					x_img = np.transpose(x_img, (0, 2, 3, 4, 1)) #For RGB image: (1, cols, rows, 3)
 					y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 4, 1))
 					y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 4, 1))

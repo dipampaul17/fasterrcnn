@@ -1,5 +1,5 @@
 import os
-from cv2 import cv2
+import cv2
 import xml.etree.ElementTree as ET
 import numpy as np
 def get_data(input_path):

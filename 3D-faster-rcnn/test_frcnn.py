@@ -110,7 +110,7 @@ elif C.network == 'vgg':
 elif C.network == 'resnet101':
 	num_features = 1024
 
-if K.image_data_format() == 'th':
+if K.image_data_format() == 'channels_first':
 	input_shape_img = (3, None, None)
 	input_shape_features = (num_features, None, None)
 else:
@@ -162,7 +162,7 @@ for idx, img_name in enumerate(sorted(os.listdir(img_path))):
 
 	X, ratio = format_img(img, C)
 
-	if K.image_data_format() == 'tf':
+	if K.image_data_format() == 'channels_last':
 		X = np.transpose(X, (0, 2, 3, 1))
 
 	# get the feature maps and output from the RPN

@@ -224,24 +224,24 @@ def rpn_to_roi(rpn_cls_layer, rpn_regr_layer, C, dim_ordering, use_regr=True, ma
 	anchor_ratios = C.anchor_box_ratios
 
 	assert rpn_cls_layer.shape[0] == 1
-	if dim_ordering == 'th':
+	if dim_ordering == 'channels_first':
 		(depths, rows, cols) = rpn_cls_layer.shape[2:]
-	elif dim_ordering == 'tf':
+	elif dim_ordering == 'channels_last':
 		(depths, rows, cols) = rpn_cls_layer.shape[1:4]
 
 	curr_layer = 0
 	# A: anchor position, shape: (4, depths, rows, cols, n_anchors_per_feature_map)
-	if dim_ordering == 'tf':
+	if dim_ordering == 'channels_last':
 		A = np.zeros(
 			(4, rpn_cls_layer.shape[1], rpn_cls_layer.shape[2], rpn_cls_layer.shape[3], rpn_cls_layer.shape[4]))
-	elif dim_ordering == 'th':
+	elif dim_ordering == 'channels_first':
 		A = np.zeros(
 			(4, rpn_cls_layer.shape[2], rpn_cls_layer.shape[3], rpn_cls_layer.shape[4], rpn_cls_layer.shape[1]))
 
 	for anchor_size in anchor_sizes:
 		for anchor_ratio in anchor_ratios:
 			anchor_x = (anchor_size * anchor_ratio[0]) / C.rpn_stride
-			if dim_ordering == 'th':
+			if dim_ordering == 'channels_first':
 				regr = rpn_regr_layer[0, 4 * curr_layer:4 * curr_layer + 4, :, :, :]
 			else:
 				regr = rpn_regr_layer[0, :, :, :, 4 * curr_layer:4 * curr_layer + 4]

@@ -107,7 +107,7 @@ def format_img(img, C):
 	img /= C.img_scaling_factor
 	img = np.expand_dims(img, axis=0)
 	img = np.expand_dims(img, axis=0)
-	if K.image_data_format() == 'tf':
+	if K.image_data_format() == 'channels_last':
 		img = np.transpose(img, (0, 2, 3, 4, 1))
 	return img, fz, fy, fx
 
@@ -175,7 +175,7 @@ print(class_mapping)
 class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
 C.num_rois = int(options.num_rois)
 
-if K.image_data_format() == 'th':
+if K.image_data_format() == 'channels_first':
 	input_shape_img = (1, None, None, None)
 	input_shape_features = (128, None, None, None)
 else:
