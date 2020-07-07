@@ -22,8 +22,8 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 tfconfig = tf.ConfigProto()
-#tfconfig.gpu_options.allow_growth=True
-tfconfig.gpu_options.allow_growth=False
+tfconfig.gpu_options.allow_growth=True
+#tfconfig.gpu_options.allow_growth=False
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
 session = tf.Session(config=tfconfig)
 #K.tensorflow_backend.set_session(session)
