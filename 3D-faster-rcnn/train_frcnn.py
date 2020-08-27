@@ -27,7 +27,7 @@ tfconfig.gpu_options.allow_growth=True
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
 session = tf.Session(config=tfconfig)
 #K.tensorflow_backend.set_session(session)
-tf.keras.backend.set_session(session)
+tf.compat.v1.keras.backend.set_session(session)
 
 sys.setrecursionlimit(40000)
 
@@ -44,7 +44,7 @@ parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=True)
-parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=100)
+parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=1)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config.pickle")
@@ -85,7 +85,7 @@ C.rpn_stride = 4
 
 if options.network == 'vgg':
 	C.network = 'vgg'
-	from keras_frcnn import vgg as nn
+	from keras_frcnn import vgg3d as nn
 elif options.network == 'resnet50':
 	from keras_frcnn import resnet as nn
 	C.network = 'resnet50'
@@ -95,6 +95,9 @@ elif options.network  == 'resnet101':
 elif options.network  == 'net3d':
     from keras_frcnn import net3d as nn
     C.network = 'net3d'
+elif options.network  == 'resnet3d':
+    from keras_frcnn import resnet3d as nn
+    C.network = 'resnet3d'
 else:
 	print('Not a valid model')
 	raise ValueError
@@ -142,7 +145,7 @@ data_gen_train = data_generators.get_anchor_gt(train_imgs, classes_count, C, nn.
 data_gen_val = data_generators.get_anchor_gt(val_imgs, classes_count, C, nn.get_img_output_length,K.image_data_format(), mode='val')
 
 
-if K.image_data_format == 'channels_first':
+if K.image_data_format() == 'channels_first':
 	input_shape_img = (1, None, None, None)
 else:
 	input_shape_img = (None, None, None, 1)

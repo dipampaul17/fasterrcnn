@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import io
@@ -9,22 +10,22 @@ discard_thres = 0.3
 
 
 def tomo_cut(fname):
-    img = np.load(fname + '.npy')
-    params = json.load(open(fname + '.json'))['0']['instances']
+    img = np.load('tomogram/' + fname + '.npy')
+    params = json.load(open('json/'+ fname + '.json'))['instances']
 
     num_roi = len(params)
     roi_maker = np.zeros(num_roi)
 
-    print 'image.size:', img.shape
+    print ('image.size:', img.shape)
 
     num_cut = np.zeros(3)
     ind = []
     for i in range(3):
         shape = img.shape[i]
-        if (shape & shape - 1) != 0:
-            print('Warning:::Only work for exp2')
-        elif shape % 2 != 0:
-            print('Warning:::Only work for exp2')
+        # if (shape & shape - 1) != 0:
+        #     print('Warning:::Only work for exp2')
+        # elif shape % 2 != 0:
+        #     print('Warning:::Only work for exp2')
 
         num_cut[i] = len(range(0, img.shape[i], cut_step))
         ind.append(range(0, img.shape[i], cut_step))
@@ -94,8 +95,8 @@ def tomo_cut(fname):
             continue
         bbox_for_img[xind * 10000 + yind * 100 + zind].append(new_bbox)
 
-    print 'Discard RoI due to boundary:', dis_roi
-    print 'Discard RoI due to cut:', dis_rroi
+    print ('Discard RoI due to boundary:', dis_roi)
+    print ('Discard RoI due to cut:', dis_rroi)
 
     img_out = []
 
@@ -114,22 +115,26 @@ def tomo_cut(fname):
                 dic['img'] = new_vol
                 dic['bbox'] = bbox_for_img[ind_i * 10000 + ind_j * 100 + ind_k]
                 img_out.append(dic)
-    print 'Discard vol:', cc
-    print 'Valid vol:', len(img_out)
-
-    np.save('sim-data' + fname + '.npy',np.array(img_out))
+    print ('Discard vol:', cc)
+    print ('Valid vol:', len(img_out))
+    if not(os.path.exists('cut')):
+        os.mkdir('cut')
+    np.save('cut/sim-data' + fname + '.npy',np.array(img_out))
 
 
 # name = '0b645491-d8b5-428c-b271-f0c4461ddba3'
 # tomo_cut(name)
 
 if __name__ == '__main__':
-    ids = ['0b645491-d8b5-428c-b271-f0c4461ddba3', '0dc06161-58bb-4426-a2ab-9729b8de50ff',
-           '100c050d-8fd2-48f1-925f-848f0756b3d8', '12f5554c-186f-438a-8ef2-1cff970c4fe7',
-           '1696470a-4edc-4db6-89d3-ce620bb2bfc3', '1ce3a81a-3c29-4259-9263-a4200cc2b805',
-           '2b0d1915-3744-4421-8310-76085fb467b0', '44c816da-97e0-4f82-9387-0456350fb2a1',
-           '6e83b58f-7446-4d94-81da-ab17c093f47d', 'b6e24c7e-cea6-44c4-8bed-d907520f1567']
+    # ids = ['0b645491-d8b5-428c-b271-f0c4461ddba3', '0dc06161-58bb-4426-a2ab-9729b8de50ff',
+    #        '100c050d-8fd2-48f1-925f-848f0756b3d8', '12f5554c-186f-438a-8ef2-1cff970c4fe7',
+    #        '1696470a-4edc-4db6-89d3-ce620bb2bfc3', '1ce3a81a-3c29-4259-9263-a4200cc2b805',
+    #        '2b0d1915-3744-4421-8310-76085fb467b0', '44c816da-97e0-4f82-9387-0456350fb2a1',
+    #        '6e83b58f-7446-4d94-81da-ab17c093f47d', 'b6e24c7e-cea6-44c4-8bed-d907520f1567']
+    ids = os.listdir('tomogram')
+
     for name in ids:
+        name = name[:-4]
         tomo_cut(name)
 
 '''

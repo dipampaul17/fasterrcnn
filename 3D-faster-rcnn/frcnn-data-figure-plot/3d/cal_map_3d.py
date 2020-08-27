@@ -211,7 +211,7 @@ def cal_map(pred, gt):
     print("class mean ap:")
     pprint(class2map)
 
-    print("All mAp = {}".format(np.mean(np.array(img2map))))
+    print("All Map = {}".format(np.mean(np.array(img2map))))
 
 
 def main():

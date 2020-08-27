@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pprint
 import sys
 import pickle
 from optparse import OptionParser
@@ -14,14 +15,16 @@ from sklearn.metrics import average_precision_score
 
 from skimage.transform import resize
 
-import tensorflow as tf
-
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 tfconfig = tf.ConfigProto() 
 tfconfig.gpu_options.allow_growth=True 
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
 session = tf.Session(config=tfconfig) 
-K.tensorflow_backend.set_session(session) 
+#K.tensorflow_backend.set_session(session) 
+tf.keras.backend.set_session(session)
 
 def get_map(pred, gt, f):
 	T = {}
@@ -109,6 +112,7 @@ def format_img(img, C):
 	img = np.expand_dims(img, axis=0)
 	if K.image_data_format() == 'channels_last':
 		img = np.transpose(img, (0, 2, 3, 4, 1))
+		#img = np.transpose(img, (3, 2, 0, 1))
 	return img, fz, fy, fx
 
 
@@ -118,7 +122,7 @@ parser = OptionParser()
 
 parser.add_option("-p", "--path", dest="test_path", help="Path to test data.",default='label_test-sim.txt')
 parser.add_option("-n", "--num_rois", dest="num_rois",
-				help="Number of ROIs per iteration. Higher means more memory use.", default=32)
+				help="Number of ROIs per iteration. Higher means more memory use.", default=16)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to read the metadata related to the training (generated when training).",
 				default="config.pickle")
@@ -144,8 +148,12 @@ else:
 
 config_output_filename = options.config_filename
 
-with open(config_output_filename, 'r') as f_in:
+#C = config.Config()
+if os.path.getsize(config_output_filename) == 0:
+	print('empty')
+with open(config_output_filename, 'rb') as f_in:
 	C = pickle.load(f_in)
+	#pickle.dump(C, f_in)
 
 # turn off any data augmentation at test time
 C.use_horizontal_flips = False
@@ -166,14 +174,24 @@ C.model_path = options.model
 img_path = options.test_path
 
 class_mapping = C.class_mapping
+# all_imgs, classes_count, class_mapping = get_data(options.test_path)
+# C.class_mapping = class_mapping
 
 if 'bg' not in class_mapping:
 	class_mapping['bg'] = len(class_mapping)
+# if 'bg' not in classes_count:
+# 	classes_count['bg'] = 0
+# 	class_mapping['bg'] = len(class_mapping)
 
-class_mapping = {v: k for k, v in class_mapping.iteritems()}
+class_mapping = {v: k for k, v in class_mapping.items()}
 print(class_mapping)
+# inv_map = {v: k for k, v in class_mapping.items()}
 class_to_color = {class_mapping[v]: np.random.randint(0, 255, 3) for v in class_mapping}
+#class_to_color = {inv_map[v]: np.random.randint(0, 255, 3) for v in inv_map}
 C.num_rois = int(options.num_rois)
+# print('Testing images per class:')
+# pprint.pprint(classes_count)
+# print('Num classes (including bg) = {}'.format(len(classes_count)))
 
 if K.image_data_format() == 'channels_first':
 	input_shape_img = (1, None, None, None)
@@ -195,12 +213,14 @@ num_anchors = len(C.anchor_box_scales) * len(C.anchor_box_ratios)
 rpn_layers = nn.rpn(shared_layers, num_anchors)
 
 classifier = nn.classifier(feature_map_input, roi_input, C.num_rois, nb_classes=len(class_mapping), trainable=True)
+#classifier = nn.classifier(feature_map_input, roi_input, C.num_rois, nb_classes=len(classes_count), trainable=True)
 
 model_rpn = Model(img_input, rpn_layers)
 model_classifier_only = Model([feature_map_input, roi_input], classifier)
 
 model_classifier = Model([feature_map_input, roi_input], classifier)
 
+print('Loading weights from {}'.format(C.model_path))
 model_rpn.load_weights(C.model_path, by_name=True)
 model_classifier.load_weights(C.model_path, by_name=True)
 

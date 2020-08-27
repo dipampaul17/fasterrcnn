@@ -173,6 +173,7 @@ def nn_base(input_tensor=None, trainable=False):
         bn_axis = 3
     else:
         bn_axis = 1
+    img_input_1 = Input(shape=(None, None, 3))
 
     x = ZeroPadding2D((3, 3))(img_input)
 
