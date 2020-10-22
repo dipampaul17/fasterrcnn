@@ -8,6 +8,7 @@ from optparse import OptionParser
 import pickle
 
 from keras import backend as K
+#import tf.compat.v1.keras.backend as K
 from keras.optimizers import Adam, SGD, RMSprop
 from keras.layers import Input
 from keras.models import Model
@@ -19,14 +20,15 @@ from keras.utils import generic_utils
 import os
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
+#tf.compat.v1.disable_eager_execution()
 tf.disable_v2_behavior()
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-tfconfig = tf.ConfigProto()
+tfconfig = tf.compat.v1.ConfigProto()
 tfconfig.gpu_options.allow_growth=True
-#tfconfig.gpu_options.allow_growth=False
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
-session = tf.Session(config=tfconfig)
+session = tf.compat.v1.Session(config=tfconfig)
 #K.tensorflow_backend.set_session(session)
+#K.backend.set_session(session)
 tf.compat.v1.keras.backend.set_session(session)
 tf.compat.v1.random.set_random_seed(1234)
 np.random.seed(0)
@@ -35,7 +37,7 @@ sys.setrecursionlimit(40000)
 
 parser = OptionParser()
 
-parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default='data/label_train-short.txt')
+parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default='label_train-clean.txt')
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=16)
@@ -46,14 +48,14 @@ parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=True)
-parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=1)
+parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of epochs.", default=20)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
-				default="config1.pickle")
-parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default='./out.hdf5')
-parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights. If not specified, will try to load default weights provided by keras.")
+				default="config4.pickle")
+parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default='./out50.hdf5')
+parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default='./out40.hdf5')
 parser.add_option("--input_resize", type="int", dest="input_resize", help="Resize the image to input. data_generators.py fun(get_new_img_size).", default=64)
-
+parser.add_option("-f", "--loss", dest="loss_file",default='lossf.txt')
 (options, args) = parser.parse_args()
 
 if not options.train_path:   # if filename is not given
@@ -65,6 +67,8 @@ elif options.parser == 'simple':
 	from keras_frcnn.simple_parser import get_data
 else:
 	raise ValueError("Command line option parser must be one of 'pascal_voc' or 'simple'")
+
+lossf = open(options.loss_file,'a')
 
 # pass the settings from the command line, and persist them in the config object
 C = config.Config()
@@ -87,7 +91,7 @@ C.rpn_stride = 4
 
 if options.network == 'vgg':
 	C.network = 'vgg'
-	from keras_frcnn import vgg3d as nn
+	from keras_frcnn import vgg as nn
 elif options.network == 'resnet50':
 	from keras_frcnn import resnet as nn
 	C.network = 'resnet50'
@@ -97,9 +101,6 @@ elif options.network  == 'resnet101':
 elif options.network  == 'net3d':
     from keras_frcnn import net3d as nn
     C.network = 'net3d'
-elif options.network  == 'resnet3d':
-    from keras_frcnn import resnet3d as nn
-    C.network = 'resnet3d'
 else:
 	print('Not a valid model')
 	raise ValueError
@@ -107,11 +108,9 @@ else:
 
 # check if weight path was passed via command line
 if options.input_weight_path:
-	print('valid')
 	C.base_net_weights = options.input_weight_path
 else:
 	# set the path to weights based on backend and model
-	print('not valid')
 	C.base_net_weights = nn.get_weight_path()
 
 all_imgs, classes_count, class_mapping = get_data(options.train_path)
@@ -172,12 +171,13 @@ model_classifier = Model([img_input, roi_input], classifier)
 # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
 model_all = Model([img_input, roi_input], rpn[:2] + classifier)
 
-try:
-	print('loading weights from {}'.format(C.base_net_weights))
-	model_rpn.load_weights(C.base_net_weights, by_name=True)
-	model_classifier.load_weights(C.base_net_weights, by_name=True)
-except:
-	print('Could not load pretrained model weights.')
+# try:
+print('loading weights from {}'.format(C.base_net_weights))
+model_rpn.load_weights(C.base_net_weights, by_name=True)
+model_classifier.load_weights(C.base_net_weights, by_name=True)
+# assert 0
+# except:
+# 	print('Could not load pretrained model weights.')
 
 optimizer = Adam(lr=1e-5)
 optimizer_classifier = Adam(lr=1e-5)
@@ -185,7 +185,7 @@ model_rpn.compile(optimizer=optimizer, loss=[losses.rpn_loss_cls(num_anchors), l
 model_classifier.compile(optimizer=optimizer_classifier, loss=[losses.class_loss_cls, losses.class_loss_regr(len(classes_count)-1)], metrics={'dense_class_{}'.format(len(classes_count)): 'accuracy'})
 model_all.compile(optimizer='sgd', loss='mae')
 
-epoch_length = 1000
+epoch_length = 500
 num_epochs = int(options.num_epochs)
 iter_num = 0
 
@@ -310,7 +310,9 @@ for epoch_num in range(num_epochs):
 				curr_loss = loss_rpn_cls + loss_rpn_regr + loss_class_cls + loss_class_regr
 				iter_num = 0
 				start_time = time.time()
-
+				temp = str(epoch_num + 21) +' '+ str(curr_loss)+'\n'
+				lossf.write(temp)
+				lossf.flush()
 				if curr_loss < best_loss:
 					if C.verbose:
 						print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))

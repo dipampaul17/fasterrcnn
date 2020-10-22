@@ -12,9 +12,11 @@ from keras.models import Model
 from keras_frcnn import roi_helpers
 from keras_frcnn import data_generators
 from sklearn.metrics import average_precision_score
+from sklearn.metrics import recall_score
+# from sklearn.metrics import f1_score
 
 from skimage.transform import resize
-
+from collections import defaultdict
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -24,7 +26,10 @@ tfconfig.gpu_options.allow_growth=True
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
 session = tf.Session(config=tfconfig) 
 #K.tensorflow_backend.set_session(session) 
-tf.keras.backend.set_session(session)
+#tf.keras.backend.set_session(session)
+tf.compat.v1.keras.backend.set_session(session)
+tf.compat.v1.random.set_random_seed(1234)
+np.random.seed(0)
 
 def get_map(pred, gt, f):
 	T = {}
@@ -36,6 +41,7 @@ def get_map(pred, gt, f):
 
 	pred_probs = np.array([s['prob'] for s in pred])
 	box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
+	#print(box_idx_sorted_by_prob) # is empty 
 
 	for box_idx in box_idx_sorted_by_prob:
 		pred_box = pred[box_idx]
@@ -50,8 +56,9 @@ def get_map(pred, gt, f):
 			T[pred_class] = []
 		P[pred_class].append(pred_prob)
 		found_match = False
-
+		#print('here1')
 		for gt_box in gt:
+			#print('here2')
 			gt_class = gt_box['class']
 			gt_x1 = gt_box['x1']/fx1
 			gt_x2 = gt_box['x2']/fx2
@@ -63,7 +70,8 @@ def get_map(pred, gt, f):
 			if gt_seen:
 				continue
 			iou = data_generators.iou_r((pred_x1, pred_x2, pred_x3, pred_r), (gt_x1, gt_x2, gt_x3, gt_r))
-			if iou >= 0.5:
+			#print('iou is:', iou)
+			if iou >= 0.3: #orginal is 0.5
 				found_match = True
 				gt_box['bbox_matched'] = True
 				break
@@ -73,6 +81,7 @@ def get_map(pred, gt, f):
 		T[pred_class].append(int(found_match))
 
 	for gt_box in gt:
+		#print('here3')
 		if not gt_box['bbox_matched']:
 		#if not gt_box['bbox_matched'] and not gt_box['difficult']:
 			if gt_box['class'] not in P:
@@ -116,19 +125,34 @@ def format_img(img, C):
 	return img, fz, fy, fx
 
 
+def rscore(y_true, y_pred):
+    i = set(y_true).intersection(y_pred)
+    return len(i) / len(y_true)
+
+def fscore(recall, precision):
+    if recall + precision == 0:
+        return 0
+    else:
+        return 2 * (precision * recall) / (precision + recall)
+def process(mapall):
+	res = defaultdict(int)
+	for key, value in mapall.items():
+		res[key] = sum(value)/len(value)
+	return res
+
 sys.setrecursionlimit(40000)
 
 parser = OptionParser()
-
-parser.add_option("-p", "--path", dest="test_path", help="Path to test data.",default='label_test-sim.txt')
+#data/label_test-short.txt
+parser.add_option("-p", "--path", dest="test_path", help="Path to test data.",default='label_t.txt')
 parser.add_option("-n", "--num_rois", dest="num_rois",
 				help="Number of ROIs per iteration. Higher means more memory use.", default=16)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to read the metadata related to the training (generated when training).",
-				default="config.pickle")
+				default="config3.pickle")
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple"),
-parser.add_option("-f","--file", dest="model", help="Path to weights", default='model_frcnn.hdf5')
+parser.add_option("-f","--file", dest="model", help="Path to weights", default='out40.hdf5')
 parser.add_option("--file_record", dest="rec", help="Path to save 2D results", default='3Dresults.txt')
 
 (options, args) = parser.parse_args()
@@ -234,6 +258,14 @@ test_imgs = [s for s in all_imgs]
 T = {}
 P = {}
 images_map = []
+recall_map = []
+f1_map = []
+# Label = []
+# Predict = []
+apcls = {}
+afcls = {}
+arcls = {}
+
 for idx, img_data in enumerate(test_imgs):
 	if idx%50 == 0:
 		print('{}/{}'.format(idx,len(test_imgs)))
@@ -246,14 +278,19 @@ for idx, img_data in enumerate(test_imgs):
 
 	# get the feature maps and output from the RPN
 	[Y1, Y2, F] = model_rpn.predict(X)
-
+	#print(Y1, Y2, F)
+	#predict returns  Numpy array(s) of predictions.
 	R = roi_helpers.rpn_to_roi(Y1, Y2, C, K.image_data_format(), overlap_thresh=0.7)
-
+	#R = roi_helpers.rpn_to_roi(Y1, Y2, C, K.image_data_format(), overlap_thresh=1)
+	# print(R)
+	# if R is None:
+	# 	R = roi_helpers.rpn_to_roi(Y1, Y2, C, K.image_data_format(), overlap_thresh=1)
 	# apply the spatial pyramid pooling to the proposed regions
 	bboxes = {}
 	probs = {}
 
 	for jk in range(R.shape[0] // C.num_rois + 1):
+		#print('in loop')
 		ROIs = np.expand_dims(R[C.num_rois * jk:C.num_rois * (jk + 1), :], axis=0)
 		if ROIs.shape[1] == 0:
 			break
@@ -268,12 +305,16 @@ for idx, img_data in enumerate(test_imgs):
 			ROIs = ROIs_padded
 
 		[P_cls, P_regr] = model_classifier_only.predict([F, ROIs])
-
+		#print(f'{P_cls.shape}, {P_regr.shape}')
+		#assert 0
 		for ii in range(P_cls.shape[1]):
-
+			# print( np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1) ) #not whole number
+			# print(P_cls[0, ii, :], P_cls[0, ii, :].shape, np.argmax(P_cls[0, ii, :]))
+			# assert 0
 			if np.argmax(P_cls[0, ii, :]) == (P_cls.shape[2] - 1):
 				continue
-
+			# else:
+			# 	print(P_cls[0, ii, :], P_cls[0, ii, :].shape, np.argmax(P_cls[0, ii, :]))
 			cls_name = class_mapping[np.argmax(P_cls[0, ii, :])]
 
 			if cls_name not in bboxes:
@@ -284,6 +325,7 @@ for idx, img_data in enumerate(test_imgs):
 
 			cls_num = np.argmax(P_cls[0, ii, :])
 			try:
+				#print('in try')
 				(tx1, tx2, tx3, tr) = P_regr[0, ii, 4 * cls_num:4 * (cls_num + 1)]
 				tx1 /= C.classifier_regr_std[0]
 				tx2 /= C.classifier_regr_std[1]
@@ -294,22 +336,34 @@ for idx, img_data in enumerate(test_imgs):
 				pass
 			bboxes[cls_name].append([C.rpn_stride * x1, C.rpn_stride * x2, C.rpn_stride * x3, C.rpn_stride * r])
 			probs[cls_name].append(np.max(P_cls[0, ii, :]))
-
+			#print(C.rpn_stride, C.rpn_stride, C.rpn_stride, C.rpn_stride)
+	
 	all_dets = []
-
+	# print(bboxes.shape)
+	# assert 0
 	for key in bboxes:
 		bbox = np.array(bboxes[key])
+		#print('bbox', bbox)
 
-		new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
+		new_boxes, new_probs = roi_helpers.non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.7) #original = 0.7
+		#print('new bbox', new_boxes)
 		for jk in range(new_boxes.shape[0]):
 			(x1, x2, x3, r) = new_boxes[jk, :]
+
 			det = {'x1': x1, 'x2': x2, 'x3': x3, 'r': r, 'class': key, 'prob': new_probs[jk]}
 			all_dets.append(det)
+			# Label.append(key)
+			# temp = '-1'
+			# if new_probs[jk] > 0: #set ?
+			# 	temp = key
+			# Predict.append(temp)
 
 			f_rec.write('{},{},{},{},{},{},{},{},{},{}\n'.format(filepath, x1, x2, x3, r, key, new_probs[jk], fx1, fx2, fx3))
+			f_rec.flush()
 
 	if idx%100 == 0:
 		print('Elapsed time = {}'.format(time.time() - st))
+	#print(all_dets) #if empty??
 	t, p = get_map(all_dets, img_data['bboxes'], (fx1, fx2, fx3))
 	for key in t.keys():
 		if key not in T:
@@ -317,15 +371,70 @@ for idx, img_data in enumerate(test_imgs):
 			P[key] = []
 		T[key].extend(t[key])
 		P[key].extend(p[key])
+	
 	all_aps = []
+	all_recall = []
+	all_f1 = []
+
 	for key in T.keys():
+		Label = []
+		Predict = []
 		ap = average_precision_score(T[key], P[key])
+		#f1 = f1_score(T[key], P[key], average='weighted')
 		#print('{} AP: {}'.format(key, ap))
+		if np.isnan(ap):
+			ap = 1
 		all_aps.append(ap)
+		#apcls[key] = ap
+		if key not in apcls:
+			apcls[key] = []
+		else:
+			apcls[key].append(ap)
+		for i in range(len(P[key])):
+			Label.append(key)
+			if P[key][i] > 0:
+				Predict.append(key)
+			else:
+				Predict.append('bg')
+		recall = recall_score(Label, Predict, average='micro', zero_division=1)
+		#recall = rscore(Label, Predict)
+		if key not in arcls:
+			arcls[key] = []
+		else:
+			arcls[key].append(recall)
+		all_recall.append(recall)
+
+		f1 = fscore(recall, ap)
+		if key not in afcls:
+			afcls[key] = []
+		else:
+			afcls[key].append(f1)
+		all_f1.append(f1)
+
+		# #arcls[key] = recall
+		# #afcls[key] = f1
 	images_map.append(np.mean(np.array(all_aps)))
+	recall_map.append(np.mean(np.array(all_recall)))
+	f1_map.append(np.mean(np.array(all_f1)))
+
+
 	#print('mAP = {}'.format(np.mean(np.array(all_aps))))
+	#recall = recall_score(Label, Predict, pos_label)
+	#print('f1 is:', fscore)
 	#print(T)
 	#print(P)
+	# for i in range(13):
+	# 	apcls[i] = all_aps[i]
+	# 	arcls[i] = all_recall[i]
+	# 	afcls[i] = all_f1[i]
+# print(apcls)
+print('mAP for each class:', process(apcls))
 print('All mAP = {}'.format(np.mean(np.array(images_map))))
+print('Recall Score for each class:', process(arcls))
+#print(recall_map)
+#assert 0
+print('Recall Score averaged out of all class:', np.mean(np.array(recall_map)))
+print('F1 score:', process(afcls))
+print('Average F1 score:', np.mean(np.array(f1_map)))
 f_rec.close()
 

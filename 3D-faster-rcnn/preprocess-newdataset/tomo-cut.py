@@ -5,8 +5,8 @@ import os
 import json
 
 cut_step = 64
-#discard_thres = 0.7
-discard_thres=1 #1 means totally valid
+discard_thres = 0.7
+#discard_thres=1 #1 means totally valid
 
 def tomo_cut(fname, iind):
     img = np.load('tomogram/' + fname + '.npy')
@@ -15,8 +15,8 @@ def tomo_cut(fname, iind):
     num_roi = len(params)
     roi_maker = np.zeros(num_roi)
 
-    print 'image.size:', img.shape
-    print 'roi generate:', num_roi
+    print ('image.size:', img.shape)
+    print ('roi generate:', num_roi)
 
     num_cut = np.zeros(3)
     ind = []
@@ -100,8 +100,8 @@ def tomo_cut(fname, iind):
             continue
         bbox_for_img[xind * 10000 + yind * 100 + zind].append(new_bbox)
 
-    print 'Discard RoI due to boundary:', dis_roi
-    print 'Discard RoI due to cut:', dis_rroi
+    print ('Discard RoI due to boundary:', dis_roi)
+    print ('Discard RoI due to cut:', dis_rroi)
 
     img_out = []
 
@@ -122,8 +122,8 @@ def tomo_cut(fname, iind):
                 dic['img'] = new_vol
                 dic['bbox'] = bbox_for_img[ind_i * 10000 + ind_j * 100 + ind_k]
                 img_out.append(dic)
-    print 'Discard vol:', cc
-    print 'Valid vol:', len(img_out)
+    print ('Discard vol:', cc)
+    print ('Valid vol:', len(img_out))
 
     np.save('new-size/sim-data-init-'+str(iind)+'-' + fname + '.npy',np.array(img_out))
 
@@ -132,7 +132,7 @@ def tomo_cut(fname, iind):
 # tomo_cut(name)
 
 if __name__ == '__main__':
-    ids = os.listdir('tomogram')
+    ids = os.listdir('tomogram')[:10]
     for kkind in range(0,64,4):
         for name in ids:
             name = name[:-4]

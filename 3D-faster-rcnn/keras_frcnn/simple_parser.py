@@ -32,7 +32,7 @@ def get_data(input_path):
 		print('Parsing annotation files')
 
 		for line in f:
-			line_split = line.strip().split(',')
+			line_split = line.strip().split(',') #was ,
 			(filename,x1,x2,x3,r,class_name) = line_split
 
 			if class_name not in classes_count:
