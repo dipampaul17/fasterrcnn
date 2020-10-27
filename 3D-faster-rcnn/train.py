@@ -27,7 +27,7 @@ import os
 #import tensorflow.compat.v1 as tf
 #tf.compat.v1.disable_eager_execution()
 #tf.disable_v2_behavior()
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 tfconfig = tf.ConfigProto()
 tfconfig.gpu_options.allow_growth=True
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
@@ -50,7 +50,7 @@ parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number 
 parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='vgg3d')
 parser.add_option("--ty", dest="trans_prespective_y", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--tx", dest="trans_prespective_x", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
-parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
+parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Defaulst=false).", action="store_true", default=True)
 parser.add_option("--vf", dest="vertical_flips", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--rot", "--rot_90", dest="rot_90", help="Augment with 90 degree rotations in training. (Default=false).",
 				  action="store_true", default=True)
@@ -58,8 +58,8 @@ parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config4.pickle")
-parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default='./out50.hdf5')
-parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default='./out40.hdf5')
+parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="C:\\Users\\Dipam Paul\\Desktop\\fasterrcnn\\3D-faster-rcnn\\out51.h5")
+parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default="C:\\Users\\Dipam Paul\\Desktop\\fasterrcnn\\3D-faster-rcnn\\out40.h5")
 parser.add_option("--input_resize", type="int", dest="input_resize", help="Resize the image to input. data_generators.py fun(get_new_img_size).", default=64)
 parser.add_option("-f", "--loss", dest="loss_file",default='lossf.txt')
 (options, args) = parser.parse_args()
@@ -97,7 +97,7 @@ C.rpn_stride = 4
 
 if options.network == 'vgg3d':
 	C.network = 'vgg3d'
-	from keras_frcnn import vgg as nn
+	from keras_frcnn import vgg3d as nn
 elif options.network == 'resnet50':
 	from keras_frcnn import resnet as nn
 	C.network = 'resnet50'
@@ -181,7 +181,7 @@ try:
 	print('loading weights from {}'.format(C.base_net_weights))
 	model_rpn.load_weights(C.base_net_weights, by_name=True)
 	model_classifier.load_weights(C.base_net_weights, by_name=True)
-# assert 0
+
 except:
 	print('Could not load pretrained model weights.')
 
