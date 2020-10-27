@@ -1,12 +1,17 @@
 from __future__ import division
 import random
 import pprint
+import h5py
 import sys
 import time
 import numpy as np
 from optparse import OptionParser
 import pickle
-
+import tensorflow as tf
+#import tensorflow_addons as tfa
+#import tensorflow.compat.v1.contrib.slim as slim
+#from tensorflow.compat.v1.contrib.slim import losses
+#from tensorflow.compat.v1.ccontrib.slim import arg_scope
 from keras import backend as K
 #import tf.compat.v1.keras.backend as K
 from keras.optimizers import Adam, SGD, RMSprop
@@ -19,18 +24,19 @@ from keras.utils import generic_utils
 
 import os
 #import tensorflow as tf
-import tensorflow.compat.v1 as tf
+#import tensorflow.compat.v1 as tf
 #tf.compat.v1.disable_eager_execution()
-tf.disable_v2_behavior()
+#tf.disable_v2_behavior()
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-tfconfig = tf.compat.v1.ConfigProto()
+tfconfig = tf.ConfigProto()
 tfconfig.gpu_options.allow_growth=True
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
-session = tf.compat.v1.Session(config=tfconfig)
-#K.tensorflow_backend.set_session(session)
+session = tf.Session(config=tfconfig)
+K.tensorflow_backend.set_session(session)
 #K.backend.set_session(session)
-tf.compat.v1.keras.backend.set_session(session)
-tf.compat.v1.random.set_random_seed(1234)
+K.set_learning_phase(1)
+tf.keras.backend.set_session(session)
+tf.random.set_random_seed(1234)
 np.random.seed(0)
 
 sys.setrecursionlimit(40000)
