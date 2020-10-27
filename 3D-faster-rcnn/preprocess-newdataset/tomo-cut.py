@@ -124,6 +124,8 @@ def tomo_cut(fname, iind):
                 img_out.append(dic)
     print ('Discard vol:', cc)
     print ('Valid vol:', len(img_out))
+    if not(os.path.exists('new-size')):
+        os.mkdir('new-size')
 
     np.save('new-size/sim-data-init-'+str(iind)+'-' + fname + '.npy',np.array(img_out))
 
