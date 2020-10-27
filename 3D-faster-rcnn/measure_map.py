@@ -1,35 +1,51 @@
-import os
-import numpy as np
+from __future__ import division
+import random
 import pprint
+import h5py
 import sys
-import pickle
-from optparse import OptionParser
 import time
-from keras_frcnn import config
+import numpy as np
+from optparse import OptionParser
+import pickle
+import tensorflow as tf
+#import tensorflow_addons as tfa
+#import tensorflow.compat.v1.contrib.slim as slim
+#from tensorflow.compat.v1.contrib.slim import losses
+#from tensorflow.compat.v1.ccontrib.slim import arg_scope
 from keras import backend as K
+#import tf.compat.v1.keras.backend as K
+from keras.optimizers import Adam, SGD, RMSprop
 from keras.layers import Input
 from keras.models import Model
-from keras_frcnn import roi_helpers
-from keras_frcnn import data_generators
+from keras_frcnn import config, data_generators
+from keras_frcnn import losses as losses
+import keras_frcnn.roi_helpers as roi_helpers
+from keras.utils import generic_utils
+
+import os
+#import tensorflow as tf
+#import tensorflow.compat.v1 as tf
+#tf.compat.v1.disable_eager_execution()
+#tf.disable_v2_behavior()
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+tfconfig = tf.ConfigProto()
+tfconfig.gpu_options.allow_growth=True
+#tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
+session = tf.Session(config=tfconfig)
+K.tensorflow_backend.set_session(session)
+#K.backend.set_session(session)
+K.set_learning_phase(1)
+tf.keras.backend.set_session(session)
+tf.random.set_random_seed(1234)
+np.random.seed(0)
+
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import recall_score
-# from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score
 
 from skimage.transform import resize
 from collections import defaultdict
-#import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-tfconfig = tf.ConfigProto() 
-tfconfig.gpu_options.allow_growth=True 
-#tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
-session = tf.Session(config=tfconfig) 
-#K.tensorflow_backend.set_session(session) 
-#tf.keras.backend.set_session(session)
-tf.compat.v1.keras.backend.set_session(session)
-tf.compat.v1.random.set_random_seed(1234)
-np.random.seed(0)
+
 
 def get_map(pred, gt, f):
 	T = {}
@@ -144,16 +160,16 @@ sys.setrecursionlimit(40000)
 
 parser = OptionParser()
 #data/label_test-short.txt
-parser.add_option("-p", "--path", dest="test_path", help="Path to test data.",default='label_t.txt')
+parser.add_option("-p", "--path", dest="test_path", help="Path to test data.",default='label_test-sim.txt')
 parser.add_option("-n", "--num_rois", dest="num_rois",
 				help="Number of ROIs per iteration. Higher means more memory use.", default=16)
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to read the metadata related to the training (generated when training).",
-				default="config3.pickle")
+				default="config4.pickle")
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple"),
-parser.add_option("-f","--file", dest="model", help="Path to weights", default='out40.hdf5')
-parser.add_option("--file_record", dest="rec", help="Path to save 2D results", default='3Dresults.txt')
+parser.add_option("-f","--file", dest="model", help="Path to weights", default='3D-faster-rcnn\out51.h5')
+parser.add_option("--file_record", dest="rec", help="Path to save 2D results", default='3Dresults1.txt')
 
 (options, args) = parser.parse_args()
 
