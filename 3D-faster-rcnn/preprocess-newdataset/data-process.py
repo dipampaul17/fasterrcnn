@@ -17,7 +17,12 @@ def data_extra(fname,f,iind,model='train'):
             name = 'train-sim-volumes/'+new_name+'.npy'
         elif model=='test':
             name = 'test-sim-volumes/'+new_name+'.npy'
-        
+
+        if not(os.path.exists('train-sim-volumes')):
+            os.mkdir('train-sim-volumes')
+        if not(os.path.exists('test-sim-volumes')):
+            os.mkdir('test-sim-volumes')
+
         np.save(name, img)
 
         for roi_no in range(num_roi):
@@ -38,5 +43,4 @@ if __name__ == '__main__':
             data_extra(name[:-4],f_test, kkind, model='test')
     f_train.close()
     f_test.close()
-
 
