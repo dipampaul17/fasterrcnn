@@ -43,7 +43,7 @@ sys.setrecursionlimit(40000)
 
 parser = OptionParser()
 
-parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default='label_train-clean.txt')
+parser.add_option("-p", "--path", dest="train_path", help="Path to training data.",default='label_train-sim.txt')
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=16)
