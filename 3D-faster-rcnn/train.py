@@ -95,8 +95,8 @@ C.anchor_box_ratios = [[1, 1, 1]]
 C.rpn_stride = 4
 ### END NEW ADDED
 
-if options.network == 'vgg':
-	C.network = 'vgg'
+if options.network == 'vgg3d':
+	C.network = 'vgg3d'
 	from keras_frcnn import vgg as nn
 elif options.network == 'resnet50':
 	from keras_frcnn import resnet as nn
