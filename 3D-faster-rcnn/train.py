@@ -41,7 +41,7 @@ parser.add_option("-p", "--path", dest="train_path", help="Path to training data
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=16)
-parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='net3d')
+parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='vgg3d')
 parser.add_option("--ty", dest="trans_prespective_y", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--tx", dest="trans_prespective_x", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
@@ -171,13 +171,13 @@ model_classifier = Model([img_input, roi_input], classifier)
 # this is a model that holds both the RPN and the classifier, used to load/save weights for the models
 model_all = Model([img_input, roi_input], rpn[:2] + classifier)
 
-# try:
-print('loading weights from {}'.format(C.base_net_weights))
-model_rpn.load_weights(C.base_net_weights, by_name=True)
-model_classifier.load_weights(C.base_net_weights, by_name=True)
+try:
+	print('loading weights from {}'.format(C.base_net_weights))
+	model_rpn.load_weights(C.base_net_weights, by_name=True)
+	model_classifier.load_weights(C.base_net_weights, by_name=True)
 # assert 0
-# except:
-# 	print('Could not load pretrained model weights.')
+except:
+	print('Could not load pretrained model weights.')
 
 optimizer = Adam(lr=1e-5)
 optimizer_classifier = Adam(lr=1e-5)
