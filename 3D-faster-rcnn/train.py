@@ -58,8 +58,8 @@ parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config4.pickle")
-parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="C:\\Users\\Dipam Paul\\Desktop\\fasterrcnn\\3D-faster-rcnn\\out51.h5")
-parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default="C:\\Users\\Dipam Paul\\Desktop\\fasterrcnn\\3D-faster-rcnn\\out40.h5")
+parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/outres50.h5")
+parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/outres40.h5")
 parser.add_option("--input_resize", type="int", dest="input_resize", help="Resize the image to input. data_generators.py fun(get_new_img_size).", default=64)
 parser.add_option("-f", "--loss", dest="loss_file",default='lossf.txt')
 (options, args) = parser.parse_args()
