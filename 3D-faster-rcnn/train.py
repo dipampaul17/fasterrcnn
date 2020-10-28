@@ -47,7 +47,7 @@ parser.add_option("-p", "--path", dest="train_path", help="Path to training data
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=16)
-parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='vgg3d')
+parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='resnet3d')
 parser.add_option("--ty", dest="trans_prespective_y", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--tx", dest="trans_prespective_x", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Defaulst=false).", action="store_true", default=True)
@@ -98,9 +98,9 @@ C.rpn_stride = 4
 if options.network == 'vgg3d':
 	C.network = 'vgg3d'
 	from keras_frcnn import vgg3d as nn
-elif options.network == 'resnet50':
-	from keras_frcnn import resnet as nn
-	C.network = 'resnet50'
+elif options.network == 'resnet3d':
+	from keras_frcnn import resnet3d as nn
+	C.network = 'resnet3d'
 elif options.network  == 'resnet101':
     from keras_frcnn import resnet101 as nn
     C.network = 'resnet101'
