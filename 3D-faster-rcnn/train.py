@@ -27,7 +27,7 @@ import os
 #import tensorflow.compat.v1 as tf
 #tf.compat.v1.disable_eager_execution()
 #tf.disable_v2_behavior()
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 tfconfig = tf.ConfigProto()
 tfconfig.gpu_options.allow_growth=True
 #tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.3 
