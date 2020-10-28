@@ -168,7 +168,7 @@ parser.add_option("--config_filename", dest="config_filename", help=
 				default="config4.pickle")
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple"),
-parser.add_option("-f","--file", dest="model", help="Path to weights", default='3D-faster-rcnn\out51.h5')
+parser.add_option("-f","--file", dest="model", help="Path to weights", default='3D-faster-rcnn\outres50.h5')
 parser.add_option("--file_record", dest="rec", help="Path to save 2D results", default='3Dresults1.txt')
 
 (options, args) = parser.parse_args()
