@@ -200,8 +200,8 @@ C.use_horizontal_flips = False
 C.use_vertical_flips = False
 C.rot_90 = False
 
-if C.network == 'resnet50':
-	import keras_frcnn.resnet as nn
+if C.network == 'resnet3d':
+	import keras_frcnn.resnet3d as nn
 elif C.network == 'vgg':
 	import keras_frcnn.vgg as nn
 elif C.network == 'resnet101':
