@@ -47,7 +47,7 @@ parser.add_option("-p", "--path", dest="train_path", help="Path to training data
 parser.add_option("-o", "--parser", dest="parser", help="Parser to use. One of simple or pascal_voc",
 				default="simple")
 parser.add_option("-n", "--num_rois", type="int", dest="num_rois", help="Number of RoIs to process at once.", default=16)
-parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='resnet3d')
+parser.add_option("--network", dest="network", help="Base network to use. Supports vgg or resnet50.", default='net3d')
 parser.add_option("--ty", dest="trans_prespective_y", help="Augment with horizontal flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--tx", dest="trans_prespective_x", help="Augment with vertical flips in training. (Default=false).", action="store_true", default=True)
 parser.add_option("--hf", dest="horizontal_flips", help="Augment with horizontal flips in training. (Defaulst=false).", action="store_true", default=True)
@@ -58,8 +58,8 @@ parser.add_option("--num_epochs", type="int", dest="num_epochs", help="Number of
 parser.add_option("--config_filename", dest="config_filename", help=
 				"Location to store all the metadata related to the training (to be used when testing).",
 				default="config4.pickle")
-parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/outres50.h5")
-parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/outres40.h5")
+parser.add_option("--output_weight_path", dest="output_weight_path", help="Output path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/outsq.h5")
+parser.add_option("--input_weight_path", dest="input_weight_path", help="Input path for weights.", default="/mnt/ssd2/docker/ubuntu-sshd/home/v_dipam_paul/fasterrcnn/3D-faster-rcnn/out40.h5")
 parser.add_option("--input_resize", type="int", dest="input_resize", help="Resize the image to input. data_generators.py fun(get_new_img_size).", default=64)
 parser.add_option("-f", "--loss", dest="loss_file",default='lossf.txt')
 (options, args) = parser.parse_args()
@@ -95,18 +95,18 @@ C.anchor_box_ratios = [[1, 1, 1]]
 C.rpn_stride = 4
 ### END NEW ADDED
 
-if options.network == 'vgg3d':
-	C.network = 'vgg3d'
-	from keras_frcnn import vgg3d as nn
+if options.network == 'net3d':
+	from keras_frcnn import net3d as nn
+	C.network = 'net3d'	
 elif options.network == 'resnet3d':
 	from keras_frcnn import resnet3d as nn
 	C.network = 'resnet3d'
 elif options.network  == 'resnet101':
     from keras_frcnn import resnet101 as nn
     C.network = 'resnet101'
-elif options.network  == 'net3d':
-    from keras_frcnn import net3d as nn
-    C.network = 'net3d'
+#elif options.network  == 'net3d':
+    #from keras_frcnn import net3d as nn
+    #C.network = 'net3d'
 else:
 	print('Not a valid model')
 	raise ValueError
