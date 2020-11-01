@@ -62,6 +62,16 @@ def nn_base(input_tensor=None, trainable=False):
     m = Convolution3D(128, (3, 3, 3), activation='relu', padding='same')(m)
     #m = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2))(m)   
 
+    m = Convolution3D(32, (3, 3, 3), activation='relu', padding='same')(img_input)
+    m = Convolution3D(32, (3, 3, 3), activation='relu', padding='same')(m)
+    m = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2))(m)
+
+    m = Convolution3D(64, (3, 3, 3), activation='relu', padding='same')(m)
+    m = Convolution3D(64, (3, 3, 3), activation='relu', padding='same')(m)
+    m = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2))(m)
+
+    m = Convolution3D(128, (3, 3, 3), activation='relu', padding='same')(m)
+    m = Convolution3D(128, (3, 3, 3), activation='relu', padding='same')(m)
     '''
     m = Flatten(name='flatten')(m)
     m = Dense(1024, activation='relu', name='fc1')(m)
